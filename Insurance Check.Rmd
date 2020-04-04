@@ -1,0 +1,185 @@
+---
+title: "Insurance Lists Review"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(readxl)
+options(digits = 2)
+
+INS_Check <- read_xlsx("C:\\Users\\USER\\Desktop\\WORK CURRENT\\Insurance - THE REINSURING\\3PL INSURANCE CHECK.xlsx", sheet = "Comparison Table")
+INS_Check <- INS_Check %>% mutate(Status = ifelse(str_detect(Status,regex("active",ignore_case = T)),"ACTIVE",Status)) %>% filter(Status == "ACTIVE")
+colnames(INS_Check) <- colnames(INS_Check) %>% str_replace_all(.," ","_")
+```
+
+# Total Counts
+
+**Total number of Employees:** `r nrow(INS_Check)`
+
+**Employee Files**
+
+The Total number of Active employees with files at the HQ is `r INS_Check %>% summarise(sum(File_Present)) %>% pull()` or `r INS_Check %>% summarise(mean(File_Present)) %>% pull() *100` % of the total.
+
+Therefore the number of employees who have not submitted any files is `r INS_Check %>% summarise(sum(!File_Present)) %>% pull()` or `r INS_Check %>% summarise(mean(!File_Present)) %>% pull()` % of the total.
+
+Broken Down by  Company
+```{r file not present, echo=FALSE}
+INS_Check %>% group_by(Company) %>% summarise(sum(!File_Present),mean(!File_Present)*100) %>% knitr::kable(col.names = c("Company","Count","% of Company Total"))
+```
+
+Below is the list of names broken down by company
+
+2B:
+```{r f not present 2B, echo=FALSE}
+INS_Check %>% filter(!File_Present, Company == "2B") %>% select(ID,Name) %>% knitr::kable(align = c("l","r"))
+```
+
+BAPCO:
+```{r f not present BAPCO, echo=FALSE}
+INS_Check %>% filter(!File_Present, Company == "BAPCO") %>% select(ID,Name) %>% knitr::kable()
+```
+
+PETCO:
+```{r f not present PETCO, echo=FALSE}
+INS_Check %>% filter(!File_Present, Company == "PETCO") %>% select(ID,Name) %>% knitr::kable()
+```
+
+Sharif:
+```{r f not present SHARIF, echo=FALSE}
+INS_Check %>% filter(!File_Present, Company == "SHARIF") %>% select(ID,Name) %>% knitr::kable()
+```
+
+Rawat:
+```{r f not present RAWAT, echo=FALSE}
+INS_Check %>% filter(!File_Present, Company == "RAWAT") %>% select(ID,Name) %>% knitr::kable()
+```
+
+**Names received from Al Mutakhasisa:**
+
+The total number of employees whose names were recieved from Al Mutakhasisa is `r INS_Check %>% summarise(sum(Incoming)) %>% pull()` or `r INS_Check %>% summarise(mean(Incoming)) * 100` % of the total.
+
+Broken Down by Company:
+
+```{r incoming-company, echo=FALSE}
+INS_Check %>% group_by(Company) %>% summarize(sum(Incoming),mean(Incoming)*100) %>% knitr::kable(col.names = c("Company","Count","% of Company Total"))
+```
+
+Broken down by Batches:
+
+```{r by batches incoming, echo=FALSE}
+INS_Check %>%  group_by(Incoming_Batch) %>% summarize(Count = sum(Incoming)) %>% filter(!is.na(Incoming_Batch)) %>% knitr::kable(col.names = c("Batch","Count"),align = c("l","r"))
+```
+
+**Names on our checklists**
+
+The total number of employees whose names were sent by us; excluding the untracked first batch, `r INS_Check %>%  summarise(sum(Outgoing)) %>% pull()` or `r INS_Check %>%  summarise(mean(Outgoing)) %>% pull() * 100` % of the total.
+
+Broken Down by Company:
+
+```{r outgoing-company, echo=FALSE}
+INS_Check %>%  group_by(Company) %>% summarize(sum(Outgoing),mean(Outgoing)*100) %>% knitr::kable(col.names = c("Company","Count","% of the Company Total"))
+```
+
+Broken down by Batches:
+
+```{r by batches outgoing, echo=FALSE}
+INS_Check %>%  group_by(Outgoing_Batch) %>% summarize(Count = sum(Outgoing)) %>% filter(!is.na(Outgoing_Batch)) %>% knitr::kable(col.names = c("Batch","Count"),align = c("l","r"))
+```
+
+
+# Employees with issues:
+
+
+**Names who have files but don't appear on any lists, presumably because they have not been sent:**
+
+The total number of employees who have files but don't appear on any list is `r INS_Check %>%  summarise(sum(File_Present_but_not_in_Outgoing_or_incoming)) %>% pull()` or `r INS_Check %>%  summarise(mean(File_Present_but_not_in_Outgoing_or_incoming)) %>% pull() * 100` % of the total.
+
+Broken Down by Company:
+```{r not included anywhere, echo=FALSE}
+INS_Check %>% group_by(Company) %>%  summarise(sum(File_Present_but_not_in_Outgoing_or_incoming),mean(File_Present_but_not_in_Outgoing_or_incoming)*100) %>% knitr::kable(col.names = c("Company","Count","% of Company Total"))
+```
+
+Below is the list of Names broken down by company
+
+2B:
+
+```{r table of not included anywhere 2B, echo=FALSE}
+INS_Check %>%  filter(File_Present_but_not_in_Outgoing_or_incoming == TRUE, Company == "2B") %>% select(ID,Name) %>% knitr::kable()
+```
+
+BAPCO:
+
+```{r table of not included anywhere BAPCO, echo=FALSE}
+INS_Check %>%  filter(File_Present_but_not_in_Outgoing_or_incoming == TRUE, Company == "BAPCO") %>% select(ID,Name) %>% knitr::kable()
+```
+
+PETCO:
+
+```{r table of not included anywhere PETCO, echo=FALSE}
+INS_Check %>%  filter(File_Present_but_not_in_Outgoing_or_incoming == TRUE, Company == "PETCO") %>% select(ID,Name) %>% knitr::kable()
+```
+
+Sharif:
+
+```{r table of not included anywhere SHARIF, echo=FALSE}
+INS_Check %>%   filter(File_Present_but_not_in_Outgoing_or_incoming == TRUE, Company == "SHARIF") %>% select(ID,Name) %>% knitr::kable()
+```
+
+Rawat:
+
+```{r table of not included anywhere RAWAT, echo=FALSE}
+INS_Check %>%  filter(File_Present_but_not_in_Outgoing_or_incoming == TRUE, Company == "Rawat") %>% select(ID,Name) %>% knitr::kable()
+```
+
+
+**Names that appear on our lists but not in Al Mutakhasisa's lists, presumably because they were lost/not processed by Al Mutakhasisa:**
+
+
+The Total number of employees who appear on our list but not Al Mutakhasisa's is `r INS_Check %>% filter(Outgoing_Batch <= max(as.numeric(Incoming_Batch),na.rm = T)) %>%  summarise(sum(Included_in_Outgoing_not_Incoming)) %>% pull()` or  `r INS_Check %>% filter(Outgoing_Batch <= max(as.numeric(Incoming_Batch),na.rm = T)) %>%  summarise(mean(Included_in_Outgoing_not_Incoming)) %>% pull() * 100` % of the total.
+
+Broken down by Company:
+
+```{r out not in breakdown, echo=FALSE, warning=FALSE}
+INS_Check %>% filter(Outgoing_Batch <= max(as.numeric(Incoming_Batch),na.rm = T)) %>% group_by(Company) %>% summarise(Count = sum(Included_in_Outgoing_not_Incoming)) %>% knitr::kable()
+```
+
+Below is the list of Names broken down by company
+
+2B:
+
+```{r out but not in 2B, echo=FALSE, warning=FALSE}
+INS_Check %>% filter(Outgoing_Batch <= max(as.numeric(Incoming_Batch),na.rm = T)) %>%  filter(Included_in_Outgoing_not_Incoming == TRUE, Company == "2B") %>% select(ID,Name) %>% knitr::kable()
+```
+
+BAPCO:
+
+```{r out but not in BAPCO, echo=FALSE, warning=FALSE}
+INS_Check %>% filter(Outgoing_Batch <= max(as.numeric(Incoming_Batch),na.rm = T)) %>%  filter(Included_in_Outgoing_not_Incoming == TRUE, Company == "BAPCO") %>% select(ID,Name) %>% knitr::kable()
+```
+
+PETCO:
+
+```{r out but not in PETCO, echo=FALSE, warning=FALSE}
+INS_Check %>% filter(Outgoing_Batch <= max(as.numeric(Incoming_Batch),na.rm = T)) %>%  filter(Included_in_Outgoing_not_Incoming == TRUE, Company == "PETCO") %>% select(ID,Name) %>% knitr::kable()
+```
+
+Sharif:
+
+```{r out but not in SHARIF, echo=FALSE, warning=FALSE}
+INS_Check %>% filter(Outgoing_Batch <= max(as.numeric(Incoming_Batch),na.rm = T)) %>%  filter(Included_in_Outgoing_not_Incoming == TRUE, Company == "SHARIF") %>% select(ID,Name) %>% knitr::kable()
+```
+
+Rawat:
+
+```{r out but not in RAWAT, echo=FALSE, warning=FALSE}
+INS_Check %>% filter(Outgoing_Batch <= max(as.numeric(Incoming_Batch),na.rm = T)) %>%  filter(Included_in_Outgoing_not_Incoming == TRUE, Company == "SHARIF") %>% select(ID,Name) %>% knitr::kable()
+```
+
+**Names that appear on the incoming lists from Al Mutakhasisa but have not collected their insurance cards:**
+
+***NOTE:*** We do not have a complete picture of which employees have recieved their cards with information available for only `r INS_Check %>% filter(Delivered != "#N/A") %>% nrow(.)`. 
+
+The total number of employees who should have ready cards and are confirmed not to have recieved them is `r INS_Check %>%  summarise(sum(Included_in_Incoming_but_not_Delivered,na.rm = T)) %>% pull()`.
+
+

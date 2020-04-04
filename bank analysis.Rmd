@@ -1,0 +1,151 @@
+---
+title: "Bank Analysis"
+author: "Hussam Hanafi"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(readxl)
+library(googledrive)
+options(scipen = 999, digits = 0)
+Sys.setlocale("LC_ALL", "en_US.UTF-8")
+drive_auth(email = "beacontechstc@gmail.com")
+
+# Import BAPCO file
+drive_download("BAPCO Employee Master sheet", path = file.path(getwd(),"DATA","BAPCO Employee Master Sheet.xlsx"), overwrite = TRUE)
+BAPCO <- read_xlsx(file.path(getwd(),"DATA","BAPCO Employee Master Sheet.xlsx"), skip = 1) %>% slice(3:n()) %>% select(1:21) %>% select(1,2,4,5,11,13,14,15,17:19,21)
+colnames(BAPCO) <- colnames(BAPCO) %>% str_replace_all(.," ","_")
+BAPCO  <- BAPCO %>% mutate(Bank_Account_no. = as.numeric(Bank_Account_no.))
+
+# IMPORT PETCO file
+drive_download("PETCO Employee Master Sheet", path = file.path(getwd(),"DATA","PETCO Employee Master Sheet.xlsx"), overwrite = TRUE)
+PETCO <- read_xlsx(file.path(getwd(),"DATA","PETCO Employee Master Sheet.xlsx"), skip = 1) %>% slice(3:n()) %>% select(1:21) %>% select(1,2,4,5,11,13,14,15,17:19,21)
+colnames(PETCO) <- colnames(PETCO) %>% str_replace_all(.," ","_")
+PETCO <- PETCO %>% mutate(Bank_Account_no. = as.numeric(Bank_Account_no.))
+
+#################################
+
+# IMPORT 2B file
+drive_download("2B Employee Master Sheet", path = file.path(getwd(),"DATA","2B Employee Master Sheet.xlsx"),overwrite = TRUE)
+TWOB <- read_xlsx(file.path(getwd(),"DATA","2B Employee Master Sheet.xlsx"), skip = 1) %>% slice(3:n()) %>% select(1:21) %>% select(1,2,4,5,11,13,14,15,17:19,21)
+colnames(TWOB) <- colnames(TWOB) %>% str_replace_all(.," ","_")
+TWOB <- TWOB %>% mutate(Bank_Account_no. = as.numeric(Bank_Account_no.))
+
+##############################################
+
+# IMPORT SHPOC file
+drive_download("SHPOC Employee Master Sheet", path = file.path(getwd(),"DATA","SHPOC Employee Master Sheet.xlsx"),overwrite = TRUE)
+SHPOC <- read_xlsx(file.path(getwd(),"DATA","SHPOC Employee Master Sheet.xlsx"), skip = 1) %>% slice(3:n()) %>% select(1:21) %>% select(1,2,4,5,11,13,14,15,17:19,21)
+colnames(SHPOC) <- colnames(SHPOC) %>% str_replace_all(.," ","_")
+SHPOC <- SHPOC %>% mutate(Bank_Account_no. = as.numeric(Bank_Account_no.))
+SHPOC %>% pull(Name_of_Bank) %>% unique(.)
+
+##########################
+
+# IMPORT RPOC file
+drive_download("RPOC Employee Master Sheet", path = file.path(getwd(),"DATA","RPOC Employee Master Sheet.xlsx"),overwrite = TRUE)
+RPOC <- read_xlsx(file.path(getwd(),"DATA","RPOC Employee Master Sheet.xlsx"), skip = 1) %>% slice(3:n()) %>% select(1:21) %>% select(1,2,4,5,11,13,14,15,17:19,21)
+colnames(RPOC) <- colnames(RPOC) %>% str_replace_all(.," ","_")
+RPOC <- RPOC %>% mutate(Bank_Account_no. = as.numeric(Bank_Account_no.))
+
+#####################
+
+OPCO <- PETCO %>% rbind(BAPCO) %>% rbind(TWOB) %>% rbind(RPOC) %>% rbind(SHPOC)
+OPCO <- OPCO %>% mutate(OPCO = ifelse(str_detect(ID,"2B"),"2B",
+                                      ifelse(str_detect(ID,"BAP"),"BAPCO",
+                                             ifelse(str_detect(ID,"RPC"),"RPOC",
+                                                    ifelse(str_detect(ID,"PET"),"PETCO","SHPOC")))))
+OPCO <- OPCO  %>% mutate(Name_of_Bank = ifelse(Name_of_Bank == "NA",NA,Name_of_Bank))
+```
+
+## Summary
+
+
+
+**2B:**
+
+```{r 2B, echo=FALSE}
+OPCO %>% filter(OPCO == "2B") %>% group_by(Name_of_Bank) %>% summarize(Count = n()) %>% mutate(Name_of_Bank = reorder(Name_of_Bank,Count)) %>% knitr::kable(col.names = c("Bank Name","Count"))
+```
+
+**BAPCO:**
+
+```{r BAPCO, echo=FALSE}
+OPCO %>% filter(OPCO == "BAPCO") %>% group_by(Name_of_Bank) %>% summarize(Count = n()) %>% mutate(Name_of_Bank = reorder(Name_of_Bank,Count)) %>% knitr::kable(col.names = c("Bank Name","Count"))
+```
+
+**PETCO:**
+
+```{r PETCO, echo=FALSE}
+OPCO %>% filter(OPCO == "PETCO") %>% group_by(Name_of_Bank) %>% summarize(Count = n()) %>% mutate(Name_of_Bank = reorder(Name_of_Bank,Count)) %>% knitr::kable(col.names = c("Bank Name","Count"))
+```
+
+**RAWAT:**
+
+```{r RAWAT, echo=FALSE}
+OPCO %>% filter(OPCO == "RPOC") %>% group_by(Name_of_Bank) %>% summarize(Count = n()) %>% mutate(Name_of_Bank = reorder(Name_of_Bank,Count)) %>% knitr::kable(col.names = c("Bank Name","Count"))
+```
+
+**SHARIF:**
+
+```{r SHARIF, echo=FALSE}
+OPCO %>% filter(OPCO == "SHPOC") %>% group_by(Name_of_Bank) %>% summarize(Count = n()) %>% mutate(Name_of_Bank = reorder(Name_of_Bank,Count)) %>% knitr::kable(col.names = c("Bank Name","Count"))
+```
+
+## By Bank:
+
+**Al Nileen**
+```{r nileen, echo=FALSE}
+OPCO %>% filter(BANK_ID == 4) %>% 
+  select(ID,Name_in_Arabic,Name_of_Bank,Name_of_Bank_Branch,Bank_Account_no.,OPCO) %>% 
+  knitr::kable(col.names = c("ID","Name","Bank","Branch","Account No.","OPCO"))
+```
+
+**Al Tadamon**
+```{r tadamon, echo=FALSE}
+OPCO %>% filter(BANK_ID == 5) %>% select(ID,Name_in_Arabic,Name_of_Bank,Name_of_Bank_Branch,Bank_Account_no.,OPCO) %>% knitr::kable(col.names = c("ID","Name","Bank","Branch","Account No.","OPCO"))
+```
+
+**Al Khartoum**
+```{r Khartoum, echo=FALSE}
+OPCO %>% filter(BANK_ID == 6) %>% select(ID,Name_in_Arabic,Name_of_Bank,Name_of_Bank_Branch,Bank_Account_no.,OPCO) %>% knitr::kable(col.names = c("ID","Name","Bank","Branch","Account No.","OPCO"))
+```
+
+**Al Nile**
+```{r nile, echo=FALSE}
+OPCO %>% filter(BANK_ID == 8) %>% select(ID,Name_in_Arabic,Name_of_Bank,Name_of_Bank_Branch,Bank_Account_no.,OPCO) %>% knitr::kable(col.names = c("ID","Name","Bank","Branch","Account No.","OPCO"))
+```
+
+**Faisal**
+```{r faisal, echo=FALSE}
+OPCO %>% filter(BANK_ID == 7) %>% select(ID,Name_in_Arabic,Name_of_Bank,Name_of_Bank_Branch,Bank_Account_no.,OPCO) %>% knitr::kable(col.names = c("ID","Name","Bank","Branch","Account No.","OPCO"))
+```
+
+**Al Idikhar**
+```{r Idikhar, echo=FALSE}
+OPCO %>% filter(BANK_ID == 2 ) %>% select(ID,Name_in_Arabic,Name_of_Bank,Name_of_Bank_Branch,Bank_Account_no.,OPCO) %>% knitr::kable(col.names = c("ID","Name","Bank","Branch","Account No.","OPCO"))
+```
+
+**Al Workers**
+```{r Worker, echo=FALSE}
+OPCO %>% filter(BANK_ID == 3) %>% select(ID,Name_in_Arabic,Name_of_Bank,Name_of_Bank_Branch,Bank_Account_no.,OPCO) %>% knitr::kable(col.names = c("ID","Name","Bank","Branch","Account No.","OPCO"))
+```
+
+**Farmers Bank**
+```{r Farmer, echo=FALSE}
+OPCO %>% filter(BANK_ID == 1) %>% select(ID,Name_in_Arabic,Name_of_Bank,Name_of_Bank_Branch,Bank_Account_no.,OPCO) %>% knitr::kable(col.names = c("ID","Name","Bank","Branch","Account No.","OPCO"))
+```
+
+**CASH**
+```{r CASH, echo=FALSE}
+OPCO %>% filter(BANK_ID == 10) %>% select(ID,Name_in_Arabic,Name_of_Bank,Name_of_Bank_Branch,Bank_Account_no.,OPCO) %>% knitr::kable(col.names = c("ID","Name","Bank","Branch","Account No.","OPCO"))
+```
+
+**No Data**
+```{r No Data, echo=FALSE}
+OPCO %>% filter(is.na(Name_of_Bank)) %>% select(ID,Name_in_Arabic,Name_of_Bank,Name_of_Bank_Branch,Bank_Account_no.,OPCO) %>% knitr::kable(col.names = c("ID","Name","Bank","Branch","Account No.","OPCO"))
+```
+
+
