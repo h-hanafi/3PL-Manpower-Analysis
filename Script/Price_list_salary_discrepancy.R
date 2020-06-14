@@ -12,13 +12,13 @@ PL <- PL %>% mutate(PL = read_xlsx("C:\\Users\\USER\\Desktop\\WORK CURRENT\\HRM 
 colnames(PL) <- c("Job_Group","Job_Location","PL")
 
 #Output File Column names
-CNames <- c("ID","Name","Job Group","Job Location","Take Home as per Price List",
+CNames <- c("ID","Name","Job Title","Job Group","Job Location","Take Home as per Price List",
             "Take Home as per Master Sheet","Discrepancy in Take Home (Price List - Master Sheet)"
             ,"Location Change fixes Discrepancy")
 #reading 2B data
 Profile_2B <- read_xlsx("C:\\Users\\USER\\Desktop\\WORK CURRENT\\HRM Transfer\\Profiles\\2B EMPLOYEE PROFILE v3.xlsx")
 colnames(Profile_2B) <- str_replace_all(colnames(Profile_2B)," ","_")
-Profile_2B <- Profile_2B %>% select(ID,Name_in_Arabic, Job_Group,Job_Location)
+Profile_2B <- Profile_2B %>% select(ID,Name_in_Arabic, Job_Title, Job_Group,Job_Location)
 
 drive_download("2B Employee Master Sheet", path = file.path(getwd(),"DATA","2B Employee Master Sheet.xlsx"),overwrite = TRUE)
 TH_2B <- read_xlsx(file.path(getwd(),"DATA","2B Employee Master Sheet.xlsx"), skip = 1) %>% slice(3:n()) %>% select(ID, `Take Home Pay`)
@@ -43,7 +43,7 @@ colnames(TH_BAPCO) <- str_replace_all(colnames(TH_BAPCO)," ","_")
 
 Profile_BAPCO <- read_xlsx("C:\\Users\\USER\\Desktop\\WORK CURRENT\\HRM Transfer\\Profiles\\BAPCO EMPLOYEE PROFILE v3.xlsx")
 colnames(Profile_BAPCO) <- str_replace_all(colnames(Profile_BAPCO)," ","_")
-Profile_BAPCO <- Profile_BAPCO %>% select(ID,Name_in_Arabic,Job_Group,Job_Location)
+Profile_BAPCO <- Profile_BAPCO %>% select(ID,Name_in_Arabic,Job_Title,Job_Group,Job_Location)
 
 #outputting discrepancies BAPCO
 Discrepancy_BAPCO <- Profile_BAPCO %>% left_join(PL) %>% left_join(TH_BAPCO)
@@ -66,7 +66,7 @@ colnames(TH_PETCO) <- str_replace_all(colnames(TH_PETCO)," ","_")
 
 Profile_PETCO <- read_xlsx("C:\\Users\\USER\\Desktop\\WORK CURRENT\\HRM Transfer\\Profiles\\PETCO EMPLOYEE PROFILE v3.xlsx")
 colnames(Profile_PETCO) <- str_replace_all(colnames(Profile_PETCO)," ","_")
-Profile_PETCO <- Profile_PETCO %>% select(ID,Name_in_Arabic,Job_Group,Job_Location)
+Profile_PETCO <- Profile_PETCO %>% select(ID,Name_in_Arabic,Job_Title,Job_Group,Job_Location)
 
 #outputting discrepancies PETCO
 Discrepancy_PETCO <- Profile_PETCO %>% left_join(PL) %>% left_join(TH_PETCO)
@@ -87,7 +87,7 @@ colnames(TH_RPOC) <- str_replace_all(colnames(TH_RPOC)," ","_")
 
 Profile_RPOC <- read_xlsx("C:\\Users\\USER\\Desktop\\WORK CURRENT\\HRM Transfer\\Profiles\\RPOC EMPLOYEE PROFILE v3.xlsx")
 colnames(Profile_RPOC) <- str_replace_all(colnames(Profile_RPOC)," ","_")
-Profile_RPOC <- Profile_RPOC %>% select(ID,Name_in_Arabic,Job_Group,Job_Location)
+Profile_RPOC <- Profile_RPOC %>% select(ID,Name_in_Arabic,Job_Title,Job_Group,Job_Location)
 
 #outputting discrepancies RPOC
 Discrepancy_RPOC <- Profile_RPOC %>% left_join(PL) %>% left_join(TH_RPOC)
@@ -108,7 +108,7 @@ colnames(TH_SHPOC) <- str_replace_all(colnames(TH_SHPOC)," ","_")
 
 Profile_SHPOC <- read_xlsx("C:\\Users\\USER\\Desktop\\WORK CURRENT\\HRM Transfer\\Profiles\\SHPOC EMPLOYEE PROFILE v3.xlsx")
 colnames(Profile_SHPOC) <- str_replace_all(colnames(Profile_SHPOC)," ","_")
-Profile_SHPOC <- Profile_SHPOC %>% select(ID,Name_in_Arabic,Job_Group,Job_Location)
+Profile_SHPOC <- Profile_SHPOC %>% select(ID,Name_in_Arabic,Job_Title,Job_Group,Job_Location)
 
 #outputting discrepancies SHPOC
 Discrepancy_SHPOC <- Profile_SHPOC %>% left_join(PL) %>% left_join(TH_SHPOC)
@@ -123,9 +123,24 @@ Discrepancy_SHPOC %>% filter(abs(Disc) > 1) %>% mutate(Loc_Disc = ID %in% Locati
   write_excel_csv("C:\\Users\\USER\\Desktop\\R modifications\\PL discrepancies SHPOC.csv")
 
 
-#
+# NA Check
 Discrepancy_2B %>% filter(is.na(PL))
 Discrepancy_BAPCO %>% filter(is.na(PL))
 Discrepancy_RPOC %>% filter(is.na(PL))
 Discrepancy_SHPOC %>% filter(is.na(PL))
 Discrepancy_PETCO %>% filter(is.na(PL))
+
+#
+Discrepancy_All <- Discrepancy_2B %>% rbind(Discrepancy_BAPCO) %>% rbind(Discrepancy_PETCO) %>% 
+  rbind(Discrepancy_RPOC) %>% rbind(Discrepancy_SHPOC) %>%
+  mutate(OPCO = ifelse(str_detect(ID,"2B"),"2B",
+                       ifelse(str_detect(ID,"BAP"),"BAPCO",
+                              ifelse(str_detect(ID,"RPC"),"RPOC",
+                                     ifelse(str_detect(ID,"PET"),"PETCO","SHPOC"))))) %>% 
+  mutate(Loc_Disc = ID %in% c(Location_SHPOC,Location_2B,Location_BAPCO,Location_RPOC,Location_PETCO))
+
+
+Discrepancy_All %>% filter(abs(Disc) > 1) %>% group_by(OPCO) %>% summarise(Disc = sum(Disc), location = sum(Loc_Disc), total = n()) %>% 
+  rename_at(colnames(.), ~ c("OPCO","Discrpancy between PL and Master Sheet",
+                             "Number that are solved by change in Location","Total Number of Discrepancies")) %>%
+  write_excel_csv("C:\\Users\\USER\\Desktop\\R modifications\\PL discrepancies Summary.csv")
